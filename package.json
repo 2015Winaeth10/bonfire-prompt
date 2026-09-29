@@ -1,0 +1,17 @@
+{
+  "name": "bonfire-prompt",
+  "version": "26.1.0",
+  "description": "A virtual terminal for Discord built with discord.js.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "license": "Unlicense",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "discord.js": "^14.27.0",
+    "dotenv": "^17.4.2"
+  }
+}
