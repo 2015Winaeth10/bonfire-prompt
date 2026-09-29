@@ -11,7 +11,8 @@ const {
   TextInputBuilder,
   TextInputStyle,
   EmbedBuilder,
-  Events
+  Events,
+  SlashCommandBuilder
 } = require("discord.js");
 const fs = require("node:fs");
 const path = require("node:path");
@@ -303,6 +304,10 @@ function makeEmbed(state) {
     .setFooter({ text: `Build ${BUILD} • Virtual filesystem` });
 }
 
+function botHasAdministrator(guild) {
+  return Boolean(guild.members.me?.permissions.has(PermissionFlagsBits.Administrator));
+}
+
 function makeButton() {
   return new ActionRowBuilder().addComponents(
     new ButtonBuilder()
@@ -319,6 +324,18 @@ const client = new Client({
 });
 
 client.once(Events.ClientReady, async ready => {
+  const command = new SlashCommandBuilder()
+    .setName("bonfire")
+    .setDescription("Open the Bonfire Prompt terminal.");
+
+  if (process.env.GUILD_ID) {
+    await ready.application.commands.set([command], process.env.GUILD_ID);
+    console.log("Registered /bonfire in GUILD_ID.");
+  } else {
+    await ready.application.commands.set([command]);
+    console.log("Registered /bonfire globally.");
+  }
+
   console.log(`Bonfire Prompt Build ${BUILD} logged in as ${ready.user.tag}`);
 });
 
@@ -327,9 +344,16 @@ client.on(Events.InteractionCreate, async interaction => {
     if (interaction.isChatInputCommand() && interaction.commandName === "bonfire") {
       if (!interaction.guild) return interaction.reply({ content: "Bonfire Prompt only runs inside a server.", ephemeral: true });
 
+      if (!botHasAdministrator(interaction.guild)) {
+        return interaction.reply({
+          content: "Bonfire Prompt cannot run: the bot needs the Administrator permission.",
+          ephemeral: true
+        });
+      }
+
       if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
         return interaction.reply({
-          content: "Bonfire Prompt cannot run here: the bot/user requires Administrator permission.",
+          content: "Administrator permission is required to use Bonfire Prompt.",
           ephemeral: true
         });
       }
@@ -348,6 +372,17 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 
     if (interaction.isButton() && interaction.customId === "bonfire:command") {
+      if (!botHasAdministrator(interaction.guild)) {
+        return interaction.reply({
+          content: "Bonfire Prompt stopped: the bot needs the Administrator permission.",
+          ephemeral: true
+        });
+      }
+
+      if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
+        return interaction.reply({ content: "Administrator permission is required.", ephemeral: true });
+      }
+
       const key = `${interaction.guild.id}:${interaction.user.id}`;
       if (!sessions.has(key)) {
         sessions.set(key, { cwd: "local", history: [] });
@@ -370,6 +405,13 @@ client.on(Events.InteractionCreate, async interaction => {
     }
 
     if (interaction.isModalSubmit() && interaction.customId === "bonfire:command_modal") {
+      if (!botHasAdministrator(interaction.guild)) {
+        return interaction.reply({
+          content: "Bonfire Prompt stopped: the bot needs the Administrator permission.",
+          ephemeral: true
+        });
+      }
+
       if (!interaction.memberPermissions.has(PermissionFlagsBits.Administrator)) {
         return interaction.reply({ content: "Administrator permission is required.", ephemeral: true });
       }
