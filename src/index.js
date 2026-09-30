@@ -294,7 +294,7 @@ function terminalMessage(state) {
     ...lines
   ].join("\n");
 
-  return `\\`\\`\\`text\n${text.slice(-3800)}\n\\`\\`\\``;
+  return ["```text", text.slice(-3800), "```"].join("\\n");
 }
 
 function makeEmbed(state) {
